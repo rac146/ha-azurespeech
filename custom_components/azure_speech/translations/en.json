@@ -43,7 +43,15 @@
     "step": {
       "init": {
         "title": "Azure Speech Settings",
-        "description": "Configure TTS defaults: voice, language, style, pitch, rate, volume, format, and profanity mode.",
+        "description": "Choose which speech settings to change.",
+        "menu_options": {
+          "tts": "Text to speech",
+          "stt": "Speech to text"
+        }
+      },
+      "tts": {
+        "title": "Text to Speech Settings",
+        "description": "Configure the default voice, language, style, pitch, rate, volume, and audio format.",
         "data": {
           "voice": "Default Voice",
           "language": "Default Language",
@@ -52,9 +60,105 @@
           "pitch": "Speaking Pitch",
           "rate": "Speaking Rate",
           "volume": "Speaking Volume (0-100, +/-, +/-%, or silent/x-soft/soft/medium/loud/x-loud)",
-          "audio_format": "Audio Format",
-          "profanity_mode": "Profanity Filter Mode"
+          "audio_format": "Audio Format"
         }
+      },
+      "stt": {
+        "title": "Speech to Text Service",
+        "description": "Choose a recognition service. Short audio keeps the original behavior and supports utterances up to 60 seconds. Azure Transcribe, LLM Speech, and MAI-Transcribe offer additional features and may have different pricing and region availability. [Check Azure region support](https://learn.microsoft.com/azure/ai-services/speech-service/regions).",
+        "data": {
+          "stt_service": "Speech service"
+        }
+      },
+      "stt_options": {
+        "title": "Speech to Text Settings",
+        "description": "Configure recognition for the selected service. Only supported controls are shown. Your TTS settings are saved separately.",
+        "data": {
+          "stt_language_mode": "Recognition language",
+          "stt_language": "Fixed language locale",
+          "profanity_mode": "Profanity filter",
+          "stt_endpoint": "Speech resource endpoint (optional)",
+          "stt_timeout": "Request timeout",
+          "stt_text_format": "Transcript format",
+          "stt_phrase_list": "Phrase list",
+          "stt_phrase_list_weight": "Phrase list weight",
+          "stt_candidate_languages": "Candidate languages for automatic detection",
+          "stt_task": "Speech task",
+          "stt_target_language": "Translation target language",
+          "stt_prompt": "Output instructions",
+          "stt_transcript_style": "Transcript style"
+        },
+        "data_description": {
+          "stt_language_mode": "Use the Assist pipeline language, force a fixed language, or let Azure detect languages automatically. With no candidate languages, automatic mode supports multilingual speech.",
+          "stt_language": "Used only in fixed language mode. Enter a locale such as en-US or es-MX.",
+          "stt_endpoint": "Use an HTTPS resource base URL such as https://my-resource.cognitiveservices.azure.com. Leave blank to use the existing endpoint or subscription region. This changes only STT requests.",
+          "stt_timeout": "Maximum wait for an Azure response. Increase this if an enhanced model needs more processing time.",
+          "stt_text_format": "Display includes punctuation, capitalization, and number formatting. Lexical preserves recognized words and may include profanity regardless of the filter setting.",
+          "stt_phrase_list": "Help Azure recognize device names, room names, people, and uncommon terms. Enter one phrase per line or separate phrases with semicolons. Up to 2,000 phrases; larger lists may increase latency.",
+          "stt_phrase_list_weight": "0 disables phrase bias, 1 is the normal weight, and 2 gives the strongest preference. Applies to the whole phrase list.",
+          "stt_candidate_languages": "Used only in automatic language mode. Enter locales such as en-US and es-MX, one per line or separated with commas or semicolons. Leave blank for multilingual recognition.",
+          "stt_task": "Transcribe keeps the spoken language. Translate returns the transcript in the target language for Assist to process.",
+          "stt_target_language": "Required for translation. Use a language code such as en, es, or ko, rather than a locale such as en-US.",
+          "stt_prompt": "Guide transcription formatting, for example: Transcribe verbatim, including all filler words and disfluencies. English instructions work best. Maximum 20,000 characters.",
+          "stt_transcript_style": "Verbatim keeps fillers and false starts. Clean removes fillers and formats speech for readability."
+        }
+      }
+    },
+    "error": {
+      "invalid_stt_service": "Choose a supported speech service.",
+      "invalid_language_mode": "Choose a language mode supported by this service.",
+      "invalid_stt_language": "Enter language locales such as en-US or es-MX.",
+      "invalid_stt_endpoint": "Enter an HTTPS resource base URL with no path, credentials, query, or fragment.",
+      "invalid_stt_timeout": "The request timeout must be between 5 and 120 seconds.",
+      "invalid_profanity_mode": "Choose a supported profanity filter.",
+      "invalid_text_format": "Choose display or lexical format.",
+      "too_many_phrases": "The phrase list must contain no more than 2,000 phrases.",
+      "invalid_phrase_weight": "Phrase list weight must be between 0 and 2.",
+      "invalid_stt_task": "Choose transcribe or translate.",
+      "invalid_target_language": "Enter a translation target language code such as en, es, or ko.",
+      "prompt_too_long": "Output instructions must contain no more than 20,000 characters.",
+      "invalid_transcript_style": "Choose verbatim or clean transcript style."
+    }
+  },
+  "selector": {
+    "stt_service": {
+      "options": {
+        "short_audio": "Short audio (original)",
+        "fast_transcription": "Azure Transcribe (fast transcription)",
+        "llm_speech": "Azure LLM Speech",
+        "mai_transcribe": "MAI-Transcribe-2"
+      }
+    },
+    "stt_language_mode": {
+      "options": {
+        "pipeline": "Use Assist pipeline language",
+        "fixed": "Use fixed language",
+        "automatic": "Detect automatically / multilingual"
+      }
+    },
+    "profanity_mode": {
+      "options": {
+        "masked": "Mask with asterisks",
+        "removed": "Remove profanity",
+        "raw": "Keep original words"
+      }
+    },
+    "stt_text_format": {
+      "options": {
+        "display": "Display (formatted)",
+        "lexical": "Lexical (recognized words)"
+      }
+    },
+    "stt_task": {
+      "options": {
+        "transcribe": "Transcribe",
+        "translate": "Translate"
+      }
+    },
+    "stt_transcript_style": {
+      "options": {
+        "verbatim": "Verbatim",
+        "clean": "Clean"
       }
     }
   },

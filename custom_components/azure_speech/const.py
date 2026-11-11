@@ -24,6 +24,19 @@ CONF_RATE: Final = "rate"
 CONF_VOLUME: Final = "volume"
 CONF_AUDIO_FORMAT: Final = "audio_format"
 CONF_PROFANITY_MODE: Final = "profanity_mode"
+CONF_STT_SERVICE: Final = "stt_service"
+CONF_STT_ENDPOINT: Final = "stt_endpoint"
+CONF_STT_LANGUAGE_MODE: Final = "stt_language_mode"
+CONF_STT_LANGUAGE: Final = "stt_language"
+CONF_STT_CANDIDATE_LANGUAGES: Final = "stt_candidate_languages"
+CONF_STT_PHRASE_LIST: Final = "stt_phrase_list"
+CONF_STT_PHRASE_LIST_WEIGHT: Final = "stt_phrase_list_weight"
+CONF_STT_PROMPT: Final = "stt_prompt"
+CONF_STT_TASK: Final = "stt_task"
+CONF_STT_TARGET_LANGUAGE: Final = "stt_target_language"
+CONF_STT_TRANSCRIPT_STYLE: Final = "stt_transcript_style"
+CONF_STT_TEXT_FORMAT: Final = "stt_text_format"
+CONF_STT_TIMEOUT: Final = "stt_timeout"
 
 # Default configuration values
 DEFAULT_REGION: Final = "eastus"
@@ -36,6 +49,18 @@ DEFAULT_RATE: Final = "default"
 DEFAULT_VOLUME: Final = "default"
 DEFAULT_AUDIO_FORMAT: Final = "mp3"
 DEFAULT_PROFANITY_MODE: Final = "masked"
+DEFAULT_STT_SERVICE: Final = "short_audio"
+DEFAULT_STT_LANGUAGE_MODE: Final = "pipeline"
+DEFAULT_STT_TIMEOUT: Final = 15
+
+# STT service names and limits from Azure's synchronous transcription APIs.
+STT_SERVICE_SHORT_AUDIO: Final = "short_audio"
+STT_SERVICE_FAST: Final = "fast_transcription"
+STT_SERVICE_LLM: Final = "llm_speech"
+STT_SERVICE_MAI: Final = "mai_transcribe"
+STT_API_VERSION: Final = "2025-10-15"
+STT_MAX_PHRASES: Final = 2000
+STT_MAX_PROMPT_LENGTH: Final = 20000
 
 # Common Azure Speech regions
 AZURE_REGIONS: Final[list[str]] = [

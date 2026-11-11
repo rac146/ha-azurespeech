@@ -3,9 +3,21 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import Any, Final
 
 import aiohttp
+
+from custom_components.azure_speech.const import (
+    CONF_STT_ENDPOINT,
+    CONF_STT_SERVICE,
+    CONF_STT_TEXT_FORMAT,
+    CONF_STT_TIMEOUT,
+    DEFAULT_STT_SERVICE,
+    DEFAULT_STT_TIMEOUT,
+    STT_API_VERSION,
+    STT_SERVICE_SHORT_AUDIO,
+)
 
 from .exceptions import (
     AzureSpeechApiClientAuthenticationError,
@@ -13,6 +25,7 @@ from .exceptions import (
     AzureSpeechApiClientError,
     AzureSpeechApiClientRateLimitError,
 )
+from .stt_options import build_transcription_definition, validate_stt_options
 
 TIMEOUT: Final = 15
 
@@ -130,35 +143,90 @@ class AzureSpeechApiClient:
         wav_audio_bytes: bytes,
         language: str = "en-US",
         profanity_mode: str = "masked",
+        *,
+        stt_options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Transcribe short WAV audio stream to text via Azure STT REST API.
+        """Transcribe WAV/Opus audio with the selected Azure REST service.
 
-        :param wav_audio_bytes: Binary WAV PCM 16kHz audio stream.
+        :param wav_audio_bytes: Binary WAV PCM 16kHz or Ogg Opus audio stream.
         :param language: Language BCP-47 locale tag (e.g. en-US).
         :param profanity_mode: Profanity filter setting (masked, removed, raw).
+        :param stt_options: Optional service-specific recognition settings.
         :return: Dict containing RecognitionStatus and DisplayText.
         """
-        url = (
-            f"{self.stt_base_url}/speech/recognition/conversation/cognitiveservices/v1"
-            f"?language={language}&profanity={profanity_mode}"
-        )
-        headers = self._headers(
-            {
-                "Content-Type": "audio/wav; codecs=audio/pcm; samplerate=16000",
-                "Accept": "application/json",
-            }
-        )
+        options = stt_options or {}
+        if errors := validate_stt_options(options):
+            raise AzureSpeechApiClientError(f"Invalid STT settings: {', '.join(errors)}")
+        if profanity_mode not in ("masked", "removed", "raw"):
+            raise AzureSpeechApiClientError("Invalid STT profanity filter")
+
+        service = options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE)
+        endpoint = options.get(CONF_STT_ENDPOINT) or self._endpoint
+        is_ogg = wav_audio_bytes.startswith(b"OggS")
+        content_type = "audio/ogg; codecs=opus" if is_ogg else "audio/wav; codecs=audio/pcm; samplerate=16000"
+        headers = self._headers({"Accept": "application/json"})
+        params: dict[str, str]
+        payload: bytes | aiohttp.FormData
+
+        if service == STT_SERVICE_SHORT_AUDIO:
+            base_url = endpoint.rstrip("/") if endpoint else self.stt_base_url
+            if endpoint and ".cognitiveservices.azure.com" in base_url:
+                base_url = f"{base_url}/stt"
+            url = f"{base_url}/speech/recognition/conversation/cognitiveservices/v1"
+            params = {"language": language, "profanity": profanity_mode}
+            if options.get(CONF_STT_TEXT_FORMAT, "display") == "lexical":
+                params["format"] = "detailed"
+            headers["Content-Type"] = content_type
+            payload = wav_audio_bytes
+        else:
+            base_url = endpoint.rstrip("/") if endpoint else f"https://{self._region}.api.cognitive.microsoft.com"
+            url = f"{base_url}/speechtotext/transcriptions:transcribe"
+            params = {"api-version": STT_API_VERSION}
+            definition = build_transcription_definition(options, language, profanity_mode)
+            payload = aiohttp.FormData()
+            payload.add_field(
+                "audio", wav_audio_bytes, filename="speech.ogg" if is_ogg else "speech.wav", content_type=content_type
+            )
+            payload.add_field("definition", json.dumps(definition), content_type="application/json")
+
         try:
-            async with asyncio.timeout(TIMEOUT):
-                response = await self._session.post(
-                    url,
-                    headers=headers,
-                    data=wav_audio_bytes,
-                )
-                await self._handle_response_errors(response)
-                result: dict[str, Any] = await response.json()
-                return result
+            async with asyncio.timeout(options.get(CONF_STT_TIMEOUT, DEFAULT_STT_TIMEOUT)):
+                response = await self._session.post(url, headers=headers, params=params, data=payload)
+                try:
+                    await self._handle_response_errors(response)
+                    result = await response.json()
+                finally:
+                    response.release()
         except TimeoutError as err:
             raise AzureSpeechApiClientCommunicationError("Timeout transcribing audio with Azure STT API") from err
         except aiohttp.ClientError as err:
             raise AzureSpeechApiClientCommunicationError(f"Connection error transcribing STT audio: {err}") from err
+        except ValueError as err:
+            raise AzureSpeechApiClientError("Azure STT returned an invalid JSON response") from err
+
+        if not isinstance(result, dict) or "error" in result:
+            raise AzureSpeechApiClientError("Azure STT returned an invalid transcription response")
+        if service == STT_SERVICE_SHORT_AUDIO:
+            if result.get("RecognitionStatus") == "Success" and options.get(CONF_STT_TEXT_FORMAT) == "lexical":
+                alternatives = result.get("NBest", [])
+                if (
+                    not isinstance(alternatives, list)
+                    or not alternatives
+                    or not isinstance(alternatives[0], dict)
+                    or not isinstance(alternatives[0].get("Lexical"), str)
+                ):
+                    raise AzureSpeechApiClientError("Azure STT returned no lexical transcription")
+                result["DisplayText"] = alternatives[0]["Lexical"]
+            if result.get("RecognitionStatus") == "Success" and not isinstance(result.get("DisplayText"), str):
+                raise AzureSpeechApiClientError("Azure STT returned no display transcription")
+            return result
+
+        combined_phrases = result.get("combinedPhrases")
+        if not isinstance(combined_phrases, list) or any(
+            not isinstance(phrase, dict) or not isinstance(phrase.get("text"), str) for phrase in combined_phrases
+        ):
+            raise AzureSpeechApiClientError("Azure STT returned no combined transcription")
+        return {
+            "RecognitionStatus": "Success",
+            "DisplayText": " ".join(phrase["text"].strip() for phrase in combined_phrases if phrase["text"].strip()),
+        }

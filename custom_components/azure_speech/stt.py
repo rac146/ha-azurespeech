@@ -7,15 +7,22 @@ from collections.abc import AsyncIterable
 from typing import Any
 
 from custom_components.azure_speech.api import (
+    AzureSpeechApiClientAuthenticationError,
     AzureSpeechApiClientCommunicationError,
     AzureSpeechApiClientError,
 )
 from custom_components.azure_speech.const import (
     CONF_LANGUAGE,
     CONF_PROFANITY_MODE,
+    CONF_STT_LANGUAGE,
+    CONF_STT_LANGUAGE_MODE,
+    CONF_STT_SERVICE,
     DEFAULT_LANGUAGE,
     DEFAULT_PROFANITY_MODE,
+    DEFAULT_STT_LANGUAGE_MODE,
+    DEFAULT_STT_SERVICE,
     LOGGER,
+    STT_SERVICE_MAI,
 )
 from custom_components.azure_speech.data import AzureSpeechConfigEntry
 from custom_components.azure_speech.entity import AzureSpeechEntity
@@ -74,11 +81,15 @@ class AzureSpeechSTTEntity(SpeechToTextEntity, AzureSpeechEntity):
     @property
     def supported_formats(self) -> list[AudioFormats]:
         """Return supported audio container formats."""
+        if self._entry.options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) == STT_SERVICE_MAI:
+            return [AudioFormats.WAV]
         return [AudioFormats.WAV, AudioFormats.OGG]
 
     @property
     def supported_codecs(self) -> list[AudioCodecs]:
         """Return supported audio codecs."""
+        if self._entry.options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) == STT_SERVICE_MAI:
+            return [AudioCodecs.PCM]
         return [AudioCodecs.PCM, AudioCodecs.OPUS]
 
     @property
@@ -112,7 +123,13 @@ class AzureSpeechSTTEntity(SpeechToTextEntity, AzureSpeechEntity):
         if not raw_audio:
             return SpeechResult(text="", result=SpeechResultState.ERROR)
 
-        if raw_audio.startswith(b"RIFF"):
+        options = dict(self._entry.options)
+        is_ogg = metadata.format == AudioFormats.OGG and metadata.codec == AudioCodecs.OPUS
+        if is_ogg and options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) == STT_SERVICE_MAI:
+            LOGGER.warning("MAI-Transcribe requires WAV audio; Ogg Opus is not supported by this service")
+            return SpeechResult(text="", result=SpeechResultState.ERROR)
+
+        if raw_audio.startswith((b"RIFF", b"OggS")) or is_ogg:
             wav_payload = raw_audio
         else:
             wav_payload = wrap_pcm_in_wav(
@@ -123,15 +140,18 @@ class AzureSpeechSTTEntity(SpeechToTextEntity, AzureSpeechEntity):
             )
 
         language = metadata.language or self._entry.options.get(CONF_LANGUAGE, DEFAULT_LANGUAGE)
+        if options.get(CONF_STT_LANGUAGE_MODE, DEFAULT_STT_LANGUAGE_MODE) == "fixed":
+            language = options.get(CONF_STT_LANGUAGE, language)
         profanity_mode = self._entry.options.get(CONF_PROFANITY_MODE, DEFAULT_PROFANITY_MODE)
 
         res: dict[str, Any] | None = None
         for attempt in range(2):
             try:
-                res = await self.coordinator.client.transcribe_stt_audio(
-                    wav_audio_bytes=wav_payload,
+                res = await self.coordinator.async_transcribe_audio(
+                    audio=wav_payload,
                     language=language,
                     profanity_mode=profanity_mode,
+                    options=options,
                 )
                 break
             except (AzureSpeechApiClientCommunicationError, TimeoutError) as err:
@@ -141,6 +161,9 @@ class AzureSpeechSTTEntity(SpeechToTextEntity, AzureSpeechEntity):
                     continue
 
                 LOGGER.warning("STT failed after retry: %s", err)
+                return SpeechResult(text="", result=SpeechResultState.ERROR)
+            except AzureSpeechApiClientAuthenticationError:
+                self._entry.async_start_reauth(self.hass)
                 return SpeechResult(text="", result=SpeechResultState.ERROR)
             except AzureSpeechApiClientError as err:
                 LOGGER.warning("STT failed: %s", err)

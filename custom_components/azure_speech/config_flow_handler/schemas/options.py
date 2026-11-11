@@ -1,5 +1,7 @@
 """Schema definitions for options flow in Azure Speech config flow."""
 
+from __future__ import annotations
+
 from typing import Any
 
 import voluptuous as vol
@@ -8,7 +10,6 @@ from custom_components.azure_speech.const import (
     CONF_AUDIO_FORMAT,
     CONF_LANGUAGE,
     CONF_PITCH,
-    CONF_PROFANITY_MODE,
     CONF_RATE,
     CONF_STYLE,
     CONF_STYLE_DEGREE,
@@ -17,7 +18,6 @@ from custom_components.azure_speech.const import (
     DEFAULT_AUDIO_FORMAT,
     DEFAULT_LANGUAGE,
     DEFAULT_PITCH,
-    DEFAULT_PROFANITY_MODE,
     DEFAULT_RATE,
     DEFAULT_STYLE,
     DEFAULT_STYLE_DEGREE,
@@ -124,15 +124,6 @@ def get_options_schema(
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=["mp3", "wav", "ogg"],
-                    mode=SelectSelectorMode.DROPDOWN,
-                )
-            ),
-            vol.Optional(
-                CONF_PROFANITY_MODE,
-                default=current_options.get(CONF_PROFANITY_MODE, DEFAULT_PROFANITY_MODE),
-            ): SelectSelector(
-                SelectSelectorConfig(
-                    options=["masked", "removed", "raw"],
                     mode=SelectSelectorMode.DROPDOWN,
                 )
             ),

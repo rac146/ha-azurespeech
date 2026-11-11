@@ -40,6 +40,21 @@ class AzureSpeechDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.client = client
         self.voices: list[dict[str, Any]] = []
 
+    async def async_transcribe_audio(
+        self,
+        audio: bytes,
+        language: str,
+        profanity_mode: str,
+        options: dict[str, Any],
+    ) -> dict[str, Any]:
+        """Route recognition requests from the STT entity to the API client."""
+        return await self.client.transcribe_stt_audio(
+            wav_audio_bytes=audio,
+            language=language,
+            profanity_mode=profanity_mode,
+            stt_options=options,
+        )
+
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch updated voices list and verify API connectivity."""
         try:

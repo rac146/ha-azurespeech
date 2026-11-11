@@ -7,12 +7,15 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.redact import async_redact_data
 
-from .const import CONF_API_KEY, CONF_ENDPOINT
+from .const import CONF_API_KEY, CONF_ENDPOINT, CONF_STT_ENDPOINT, CONF_STT_PHRASE_LIST, CONF_STT_PROMPT
 from .data import AzureSpeechConfigEntry
 
 TO_REDACT = {
     CONF_API_KEY,
     CONF_ENDPOINT,
+    CONF_STT_ENDPOINT,
+    CONF_STT_PHRASE_LIST,
+    CONF_STT_PROMPT,
     "api_key",
     "subscription_key",
     "password",
