@@ -23,6 +23,7 @@ from custom_components.azure_speech.const import (
     STT_SERVICE_FAST,
     STT_SERVICE_LLM,
     STT_SERVICE_MAI,
+    STT_SERVICE_REALTIME,
     STT_SERVICE_SHORT_AUDIO,
 )
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, FlowResult, OptionsFlow
@@ -221,7 +222,13 @@ class AzureSpeechOptionsFlowHandler(OptionsFlow):
         errors: dict[str, str] = {}
         if user_input is not None:
             service = user_input.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE)
-            if service in (STT_SERVICE_SHORT_AUDIO, STT_SERVICE_FAST, STT_SERVICE_LLM, STT_SERVICE_MAI):
+            if service in (
+                STT_SERVICE_SHORT_AUDIO,
+                STT_SERVICE_REALTIME,
+                STT_SERVICE_FAST,
+                STT_SERVICE_LLM,
+                STT_SERVICE_MAI,
+            ):
                 self._options[CONF_STT_SERVICE] = service
                 return await self.async_step_stt_options()
             errors[CONF_STT_SERVICE] = "invalid_stt_service"

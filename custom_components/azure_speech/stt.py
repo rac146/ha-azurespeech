@@ -23,6 +23,7 @@ from custom_components.azure_speech.const import (
     DEFAULT_STT_SERVICE,
     LOGGER,
     STT_SERVICE_MAI,
+    STT_SERVICE_REALTIME,
 )
 from custom_components.azure_speech.data import AzureSpeechConfigEntry
 from custom_components.azure_speech.entity import AzureSpeechEntity
@@ -81,14 +82,14 @@ class AzureSpeechSTTEntity(SpeechToTextEntity, AzureSpeechEntity):
     @property
     def supported_formats(self) -> list[AudioFormats]:
         """Return supported audio container formats."""
-        if self._entry.options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) == STT_SERVICE_MAI:
+        if self._entry.options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) in (STT_SERVICE_MAI, STT_SERVICE_REALTIME):
             return [AudioFormats.WAV]
         return [AudioFormats.WAV, AudioFormats.OGG]
 
     @property
     def supported_codecs(self) -> list[AudioCodecs]:
         """Return supported audio codecs."""
-        if self._entry.options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) == STT_SERVICE_MAI:
+        if self._entry.options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) in (STT_SERVICE_MAI, STT_SERVICE_REALTIME):
             return [AudioCodecs.PCM]
         return [AudioCodecs.PCM, AudioCodecs.OPUS]
 
@@ -125,8 +126,9 @@ class AzureSpeechSTTEntity(SpeechToTextEntity, AzureSpeechEntity):
 
         options = dict(self._entry.options)
         is_ogg = metadata.format == AudioFormats.OGG and metadata.codec == AudioCodecs.OPUS
-        if is_ogg and options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE) == STT_SERVICE_MAI:
-            LOGGER.warning("MAI-Transcribe requires WAV audio; Ogg Opus is not supported by this service")
+        service = options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE)
+        if (is_ogg or raw_audio.startswith(b"OggS")) and service in (STT_SERVICE_MAI, STT_SERVICE_REALTIME):
+            LOGGER.warning("The selected STT service requires WAV PCM audio; Ogg Opus is not supported")
             return SpeechResult(text="", result=SpeechResultState.ERROR)
 
         if raw_audio.startswith((b"RIFF", b"OggS")) or is_ogg:

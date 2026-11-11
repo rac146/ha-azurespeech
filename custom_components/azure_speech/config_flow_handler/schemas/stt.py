@@ -30,6 +30,7 @@ from custom_components.azure_speech.const import (
     STT_SERVICE_FAST,
     STT_SERVICE_LLM,
     STT_SERVICE_MAI,
+    STT_SERVICE_REALTIME,
     STT_SERVICE_SHORT_AUDIO,
 )
 from homeassistant.helpers.selector import (
@@ -56,7 +57,8 @@ def get_stt_service_schema(current_options: dict[str, Any]) -> vol.Schema:
     return vol.Schema(
         {
             vol.Required(CONF_STT_SERVICE, default=current_options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE)): _select(
-                [STT_SERVICE_SHORT_AUDIO, STT_SERVICE_FAST, STT_SERVICE_LLM, STT_SERVICE_MAI], "stt_service"
+                [STT_SERVICE_SHORT_AUDIO, STT_SERVICE_REALTIME, STT_SERVICE_FAST, STT_SERVICE_LLM, STT_SERVICE_MAI],
+                "stt_service",
             ),
         }
     )
@@ -66,7 +68,7 @@ def get_stt_options_schema(current_options: dict[str, Any]) -> vol.Schema:
     """Build a schema containing only options supported by the selected service."""
     service = current_options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE)
     language_modes = ["pipeline", "fixed"]
-    if service != STT_SERVICE_SHORT_AUDIO:
+    if service not in (STT_SERVICE_SHORT_AUDIO, STT_SERVICE_REALTIME):
         language_modes.append("automatic")
 
     mode = current_options.get(CONF_STT_LANGUAGE_MODE, DEFAULT_STT_LANGUAGE_MODE)
@@ -89,16 +91,17 @@ def get_stt_options_schema(current_options: dict[str, Any]) -> vol.Schema:
             NumberSelectorConfig(min=5, max=120, step=1, mode=NumberSelectorMode.BOX, unit_of_measurement="s")
         ),
     }
-    if service == STT_SERVICE_SHORT_AUDIO:
+    if service in (STT_SERVICE_SHORT_AUDIO, STT_SERVICE_REALTIME):
         fields[vol.Optional(CONF_STT_TEXT_FORMAT, default=current_options.get(CONF_STT_TEXT_FORMAT, "display"))] = _select(
             ["display", "lexical"], "stt_text_format"
         )
-        return vol.Schema(fields)
+        if service == STT_SERVICE_SHORT_AUDIO:
+            return vol.Schema(fields)
 
     fields[vol.Optional(CONF_STT_PHRASE_LIST, default=current_options.get(CONF_STT_PHRASE_LIST, ""))] = TextSelector(
         TextSelectorConfig(multiline=True)
     )
-    if service in (STT_SERVICE_FAST, STT_SERVICE_LLM):
+    if service in (STT_SERVICE_REALTIME, STT_SERVICE_FAST, STT_SERVICE_LLM):
         fields[
             vol.Optional(CONF_STT_PHRASE_LIST_WEIGHT, default=current_options.get(CONF_STT_PHRASE_LIST_WEIGHT, 1.0))
         ] = NumberSelector(NumberSelectorConfig(min=0, max=2, step=0.1, mode=NumberSelectorMode.BOX))

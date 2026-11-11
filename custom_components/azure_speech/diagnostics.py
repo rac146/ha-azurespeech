@@ -28,13 +28,32 @@ async def async_get_config_entry_diagnostics(
     entry: AzureSpeechConfigEntry,
 ) -> dict[str, Any]:
     """Return diagnostics for a config entry."""
-    coordinator = entry.runtime_data.coordinator
-
-    return {
+    diagnostics: dict[str, Any] = {
         "entry_data": async_redact_data(dict(entry.data), TO_REDACT),
         "entry_options": async_redact_data(dict(entry.options), TO_REDACT),
+        "request_trace_available": False,
+        "last_stt_request": None,
+        "last_stt_response": None,
         "coordinator_data": {
-            "voices_count": coordinator.data.get("voices_count", 0),
-            "status": coordinator.data.get("status", "unknown"),
+            "voices_count": 0,
+            "status": "unknown",
         },
     }
+
+    runtime_data = getattr(entry, "runtime_data", None)
+    if runtime_data is None:
+        return diagnostics
+
+    coordinator_data = runtime_data.coordinator.data or {}
+    diagnostics["coordinator_data"] = {
+        "voices_count": coordinator_data.get("voices_count", 0),
+        "status": coordinator_data.get("status", "unknown"),
+    }
+    diagnostics["request_trace_available"] = hasattr(runtime_data.client, "last_stt_request")
+    diagnostics["last_stt_request"] = async_redact_data(
+        getattr(runtime_data.client, "last_stt_request", None), TO_REDACT
+    )
+    diagnostics["last_stt_response"] = async_redact_data(
+        getattr(runtime_data.client, "last_stt_response", None), TO_REDACT
+    )
+    return diagnostics

@@ -65,7 +65,7 @@
       },
       "stt": {
         "title": "Speech to Text Service",
-        "description": "Choose a recognition service. Short audio keeps the original behavior and supports utterances up to 60 seconds. Azure Transcribe, LLM Speech, and MAI-Transcribe offer additional features and may have different pricing and region availability. [Check Azure region support](https://learn.microsoft.com/azure/ai-services/speech-service/regions).",
+        "description": "Choose a recognition service. Short audio keeps the original REST behavior. Realtime adds phrase lists to standard recognition for short commands and accepts WAV PCM audio. Both accept audio up to 60 seconds. Azure Transcribe, LLM Speech, and MAI-Transcribe may have different pricing and region availability. [Check Azure region support](https://learn.microsoft.com/azure/ai-services/speech-service/regions).",
         "data": {
           "stt_service": "Speech service"
         }
@@ -124,6 +124,7 @@
     "stt_service": {
       "options": {
         "short_audio": "Short audio (original)",
+        "realtime": "Realtime (short commands with phrase lists)",
         "fast_transcription": "Azure Transcribe (fast transcription)",
         "llm_speech": "Azure LLM Speech",
         "mai_transcribe": "MAI-Transcribe-2"

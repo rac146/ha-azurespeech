@@ -53,8 +53,9 @@ DEFAULT_STT_SERVICE: Final = "short_audio"
 DEFAULT_STT_LANGUAGE_MODE: Final = "pipeline"
 DEFAULT_STT_TIMEOUT: Final = 15
 
-# STT service names and limits from Azure's synchronous transcription APIs.
+# STT service names and limits.
 STT_SERVICE_SHORT_AUDIO: Final = "short_audio"
+STT_SERVICE_REALTIME: Final = "realtime"
 STT_SERVICE_FAST: Final = "fast_transcription"
 STT_SERVICE_LLM: Final = "llm_speech"
 STT_SERVICE_MAI: Final = "mai_transcribe"

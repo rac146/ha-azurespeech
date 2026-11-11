@@ -37,6 +37,7 @@ from custom_components.azure_speech.const import (
     STT_SERVICE_FAST,
     STT_SERVICE_LLM,
     STT_SERVICE_MAI,
+    STT_SERVICE_REALTIME,
     STT_SERVICE_SHORT_AUDIO,
 )
 
@@ -51,11 +52,21 @@ def validate_stt_options(options: dict[str, Any]) -> dict[str, str]:
     """Return field errors without making a billable recognition request."""
     errors: dict[str, str] = {}
     service = options.get(CONF_STT_SERVICE, DEFAULT_STT_SERVICE)
-    if service not in (STT_SERVICE_SHORT_AUDIO, STT_SERVICE_FAST, STT_SERVICE_LLM, STT_SERVICE_MAI):
+    if service not in (
+        STT_SERVICE_SHORT_AUDIO,
+        STT_SERVICE_REALTIME,
+        STT_SERVICE_FAST,
+        STT_SERVICE_LLM,
+        STT_SERVICE_MAI,
+    ):
         errors[CONF_STT_SERVICE] = "invalid_stt_service"
 
     language_mode = options.get(CONF_STT_LANGUAGE_MODE, DEFAULT_STT_LANGUAGE_MODE)
-    allowed_modes = ("pipeline", "fixed") if service == STT_SERVICE_SHORT_AUDIO else ("pipeline", "fixed", "automatic")
+    allowed_modes = (
+        ("pipeline", "fixed")
+        if service in (STT_SERVICE_SHORT_AUDIO, STT_SERVICE_REALTIME)
+        else ("pipeline", "fixed", "automatic")
+    )
     if language_mode not in allowed_modes:
         errors[CONF_STT_LANGUAGE_MODE] = "invalid_language_mode"
     if language_mode == "fixed" and not re.fullmatch(r"[a-z]{2,3}-[A-Za-z0-9-]{2,15}", options.get(CONF_STT_LANGUAGE, "")):
@@ -76,15 +87,16 @@ def validate_stt_options(options: dict[str, Any]) -> dict[str, str]:
     if options.get(CONF_PROFANITY_MODE, DEFAULT_PROFANITY_MODE) not in ("masked", "removed", "raw"):
         errors[CONF_PROFANITY_MODE] = "invalid_profanity_mode"
 
-    if service == STT_SERVICE_SHORT_AUDIO:
+    if service in (STT_SERVICE_SHORT_AUDIO, STT_SERVICE_REALTIME):
         if options.get(CONF_STT_TEXT_FORMAT, "display") not in ("display", "lexical"):
             errors[CONF_STT_TEXT_FORMAT] = "invalid_text_format"
-        return errors
+        if service == STT_SERVICE_SHORT_AUDIO:
+            return errors
 
     phrases = split_stt_list(options.get(CONF_STT_PHRASE_LIST, ""))
     if len(phrases) > STT_MAX_PHRASES:
         errors[CONF_STT_PHRASE_LIST] = "too_many_phrases"
-    if service in (STT_SERVICE_FAST, STT_SERVICE_LLM):
+    if service in (STT_SERVICE_REALTIME, STT_SERVICE_FAST, STT_SERVICE_LLM):
         weight = options.get(CONF_STT_PHRASE_LIST_WEIGHT, 1.0)
         if not isinstance(weight, (int, float)) or not 0 <= weight <= 2:
             errors[CONF_STT_PHRASE_LIST_WEIGHT] = "invalid_phrase_weight"
