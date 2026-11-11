@@ -65,14 +65,14 @@
       },
       "stt": {
         "title": "Speech to Text Service",
-        "description": "Choose a recognition service. Short audio keeps the original REST behavior. Realtime adds phrase lists to standard recognition for short commands and accepts WAV PCM audio. Both accept audio up to 60 seconds. Azure Transcribe, LLM Speech, and MAI-Transcribe may have different pricing and region availability. [Check Azure region support](https://learn.microsoft.com/azure/ai-services/speech-service/regions).",
+        "description": "Choose a recognition service. Short audio accepts utterances up to 60 seconds. Realtime supports phrase lists and optional post-stream refinement with WAV PCM audio. Azure Transcribe provides fast file transcription, while LLM Speech and MAI-Transcribe offer additional recognition models. Pricing and feature availability vary by service and region. [Check Azure region support](https://learn.microsoft.com/azure/ai-services/speech-service/regions).",
         "data": {
           "stt_service": "Speech service"
         }
       },
       "stt_options": {
         "title": "Speech to Text Settings",
-        "description": "Configure recognition for the selected service. Only supported controls are shown. Your TTS settings are saved separately.",
+        "description": "Configure recognition for the selected service.",
         "data": {
           "stt_language_mode": "Recognition language",
           "stt_language": "Fixed language locale",
@@ -82,6 +82,7 @@
           "stt_text_format": "Transcript format",
           "stt_phrase_list": "Phrase list",
           "stt_phrase_list_weight": "Phrase list weight",
+          "stt_post_refinement": "Post-stream refinement",
           "stt_candidate_languages": "Candidate languages for automatic detection",
           "stt_task": "Speech task",
           "stt_target_language": "Translation target language",
@@ -96,6 +97,7 @@
           "stt_text_format": "Display includes punctuation, capitalization, and number formatting. Lexical preserves recognized words and may include profanity regardless of the filter setting.",
           "stt_phrase_list": "Help Azure recognize device names, room names, people, and uncommon terms. Enter one phrase per line or separate phrases with semicolons. Up to 2,000 phrases; larger lists may increase latency.",
           "stt_phrase_list_weight": "0 disables phrase bias, 1 is the normal weight, and 2 gives the strongest preference. Applies to the whole phrase list.",
+          "stt_post_refinement": "Run an additional recognition pass to improve the final transcript, using the selected recognition language and phrase list. Very short commands may produce the same result. Requires a supported Azure region and language. [View availability](https://learn.microsoft.com/azure/ai-services/speech-service/regions?tabs=stt).",
           "stt_candidate_languages": "Used only in automatic language mode. Enter locales such as en-US and es-MX, one per line or separated with commas or semicolons. Leave blank for multilingual recognition.",
           "stt_task": "Transcribe keeps the spoken language. Translate returns the transcript in the target language for Assist to process.",
           "stt_target_language": "Required for translation. Use a language code such as en, es, or ko, rather than a locale such as en-US.",
@@ -114,6 +116,7 @@
       "invalid_text_format": "Choose display or lexical format.",
       "too_many_phrases": "The phrase list must contain no more than 2,000 phrases.",
       "invalid_phrase_weight": "Phrase list weight must be between 0 and 2.",
+      "invalid_post_refinement": "Turn post-stream refinement on or off.",
       "invalid_stt_task": "Choose transcribe or translate.",
       "invalid_target_language": "Enter a translation target language code such as en, es, or ko.",
       "prompt_too_long": "Output instructions must contain no more than 20,000 characters.",
@@ -123,9 +126,9 @@
   "selector": {
     "stt_service": {
       "options": {
-        "short_audio": "Short audio (original)",
-        "realtime": "Realtime (short commands with phrase lists)",
-        "fast_transcription": "Azure Transcribe (fast transcription)",
+        "short_audio": "Short audio",
+        "realtime": "Realtime",
+        "fast_transcription": "Azure Transcribe",
         "llm_speech": "Azure LLM Speech",
         "mai_transcribe": "MAI-Transcribe-2"
       }
@@ -146,8 +149,8 @@
     },
     "stt_text_format": {
       "options": {
-        "display": "Display (formatted)",
-        "lexical": "Lexical (recognized words)"
+        "display": "Display",
+        "lexical": "Lexical"
       }
     },
     "stt_task": {

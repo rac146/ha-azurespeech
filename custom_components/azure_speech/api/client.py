@@ -11,10 +11,12 @@ import aiohttp
 from custom_components.azure_speech.const import (
     CONF_STT_ENDPOINT,
     CONF_STT_LANGUAGE_MODE,
+    CONF_STT_POST_REFINEMENT,
     CONF_STT_SERVICE,
     CONF_STT_TEXT_FORMAT,
     CONF_STT_TIMEOUT,
     DEFAULT_STT_LANGUAGE_MODE,
+    DEFAULT_STT_POST_REFINEMENT,
     DEFAULT_STT_SERVICE,
     DEFAULT_STT_TIMEOUT,
     LOGGER,
@@ -186,6 +188,7 @@ class AzureSpeechApiClient:
         content_type = "audio/ogg; codecs=opus" if is_ogg else "audio/wav; codecs=audio/pcm; samplerate=16000"
         headers = self._headers({"Accept": "application/json"})
         if service == STT_SERVICE_REALTIME:
+            post_refinement = options.get(CONF_STT_POST_REFINEMENT, DEFAULT_STT_POST_REFINEMENT)
             context = build_realtime_context(options, language, profanity_mode)
             realtime_params = {
                 "language": language,
@@ -198,6 +201,7 @@ class AzureSpeechApiClient:
                 "region": self._region,
                 "custom_endpoint": bool(endpoint),
                 "language_mode": options.get(CONF_STT_LANGUAGE_MODE, DEFAULT_STT_LANGUAGE_MODE),
+                "post_refinement": post_refinement,
                 "query": dict(realtime_params),
                 "context": async_redact_data(context, {"items"}),
                 "audio_format": "wav_pcm",
@@ -206,7 +210,7 @@ class AzureSpeechApiClient:
             LOGGER.debug("Azure STT request settings: %s", self._last_stt_request)
             realtime_result, realtime_metadata = await transcribe_realtime_audio(
                 session=self._session,
-                url=realtime_url(endpoint or self.stt_base_url),
+                url=realtime_url(endpoint or self.stt_base_url, post_refinement=post_refinement),
                 headers=headers,
                 params=realtime_params,
                 audio=wav_audio_bytes,

@@ -31,6 +31,7 @@ CONF_STT_LANGUAGE: Final = "stt_language"
 CONF_STT_CANDIDATE_LANGUAGES: Final = "stt_candidate_languages"
 CONF_STT_PHRASE_LIST: Final = "stt_phrase_list"
 CONF_STT_PHRASE_LIST_WEIGHT: Final = "stt_phrase_list_weight"
+CONF_STT_POST_REFINEMENT: Final = "stt_post_refinement"
 CONF_STT_PROMPT: Final = "stt_prompt"
 CONF_STT_TASK: Final = "stt_task"
 CONF_STT_TARGET_LANGUAGE: Final = "stt_target_language"
@@ -51,6 +52,7 @@ DEFAULT_AUDIO_FORMAT: Final = "mp3"
 DEFAULT_PROFANITY_MODE: Final = "masked"
 DEFAULT_STT_SERVICE: Final = "short_audio"
 DEFAULT_STT_LANGUAGE_MODE: Final = "pipeline"
+DEFAULT_STT_POST_REFINEMENT: Final = False
 DEFAULT_STT_TIMEOUT: Final = 15
 
 # STT service names and limits.

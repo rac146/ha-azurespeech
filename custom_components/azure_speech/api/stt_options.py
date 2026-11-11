@@ -1,9 +1,10 @@
 """Validate STT settings and map them to Azure transcription request fields.
 
 The fast transcription endpoint uses API version 2025-10-15 for phrase lists
-and enhanced mode. Post-stream refinement is a Speech SDK feature and is not
-part of this REST API. See Microsoft's fast-transcription-create, llm-speech,
-mai-transcribe, and improve-accuracy-phrase-list documentation.
+and enhanced mode. Post-stream refinement uses the realtime WebSocket service
+and is not part of the REST transcription API. See Microsoft's
+fast-transcription-create, llm-speech, how-to-recognize-speech, mai-transcribe,
+and improve-accuracy-phrase-list documentation.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ from custom_components.azure_speech.const import (
     CONF_STT_LANGUAGE_MODE,
     CONF_STT_PHRASE_LIST,
     CONF_STT_PHRASE_LIST_WEIGHT,
+    CONF_STT_POST_REFINEMENT,
     CONF_STT_PROMPT,
     CONF_STT_SERVICE,
     CONF_STT_TARGET_LANGUAGE,
@@ -30,6 +32,7 @@ from custom_components.azure_speech.const import (
     CONF_STT_TRANSCRIPT_STYLE,
     DEFAULT_PROFANITY_MODE,
     DEFAULT_STT_LANGUAGE_MODE,
+    DEFAULT_STT_POST_REFINEMENT,
     DEFAULT_STT_SERVICE,
     DEFAULT_STT_TIMEOUT,
     STT_MAX_PHRASES,
@@ -92,6 +95,8 @@ def validate_stt_options(options: dict[str, Any]) -> dict[str, str]:
             errors[CONF_STT_TEXT_FORMAT] = "invalid_text_format"
         if service == STT_SERVICE_SHORT_AUDIO:
             return errors
+        if not isinstance(options.get(CONF_STT_POST_REFINEMENT, DEFAULT_STT_POST_REFINEMENT), bool):
+            errors[CONF_STT_POST_REFINEMENT] = "invalid_post_refinement"
 
     phrases = split_stt_list(options.get(CONF_STT_PHRASE_LIST, ""))
     if len(phrases) > STT_MAX_PHRASES:

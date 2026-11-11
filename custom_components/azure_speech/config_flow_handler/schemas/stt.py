@@ -15,6 +15,7 @@ from custom_components.azure_speech.const import (
     CONF_STT_LANGUAGE_MODE,
     CONF_STT_PHRASE_LIST,
     CONF_STT_PHRASE_LIST_WEIGHT,
+    CONF_STT_POST_REFINEMENT,
     CONF_STT_PROMPT,
     CONF_STT_SERVICE,
     CONF_STT_TARGET_LANGUAGE,
@@ -25,6 +26,7 @@ from custom_components.azure_speech.const import (
     DEFAULT_LANGUAGE,
     DEFAULT_PROFANITY_MODE,
     DEFAULT_STT_LANGUAGE_MODE,
+    DEFAULT_STT_POST_REFINEMENT,
     DEFAULT_STT_SERVICE,
     DEFAULT_STT_TIMEOUT,
     STT_SERVICE_FAST,
@@ -34,6 +36,7 @@ from custom_components.azure_speech.const import (
     STT_SERVICE_SHORT_AUDIO,
 )
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -97,6 +100,12 @@ def get_stt_options_schema(current_options: dict[str, Any]) -> vol.Schema:
         )
         if service == STT_SERVICE_SHORT_AUDIO:
             return vol.Schema(fields)
+        fields[
+            vol.Optional(
+                CONF_STT_POST_REFINEMENT,
+                default=current_options.get(CONF_STT_POST_REFINEMENT, DEFAULT_STT_POST_REFINEMENT),
+            )
+        ] = BooleanSelector()
 
     fields[vol.Optional(CONF_STT_PHRASE_LIST, default=current_options.get(CONF_STT_PHRASE_LIST, ""))] = TextSelector(
         TextSelectorConfig(multiline=True)

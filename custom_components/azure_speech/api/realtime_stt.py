@@ -1,12 +1,13 @@
 """Standard Azure realtime STT using the Speech SDK's WebSocket protocol.
 
 Microsoft's Python SDK has native dependencies unavailable on some HA runtimes.
-This client uses the existing aiohttp session and the v1 framing and dynamic
+This client uses the existing aiohttp session and the message framing and dynamic
 grammar from Microsoft's JavaScript SDK (MIT licensed):
 https://github.com/microsoft/cognitive-services-speech-sdk-js/tree/master/src/common.speech
 
 PhraseListGrammar is encoded as speech.context.dgi, before any audio is sent.
-This is standard realtime recognition, without LLM or post-stream refinement.
+Optional monolingual post-stream refinement uses the SDK's PostRefinement
+setting and universal v2 endpoint. Only final phrase results are returned.
 """
 
 from __future__ import annotations
@@ -26,7 +27,9 @@ from yarl import URL
 from custom_components.azure_speech.const import (
     CONF_STT_PHRASE_LIST,
     CONF_STT_PHRASE_LIST_WEIGHT,
+    CONF_STT_POST_REFINEMENT,
     CONF_STT_TEXT_FORMAT,
+    DEFAULT_STT_POST_REFINEMENT,
 )
 
 from .exceptions import (
@@ -51,6 +54,8 @@ def build_realtime_context(options: dict[str, Any], language: str, profanity_mod
             "enrichment": {"profanity": profanity_mode.capitalize()},
         }
     }
+    if options.get(CONF_STT_POST_REFINEMENT, DEFAULT_STT_POST_REFINEMENT):
+        context["phraseDetection"]["enrichment"]["conversation"] = {"postprocessingoption": "PostRefinement"}
     if options.get(CONF_STT_TEXT_FORMAT, "display") == "lexical":
         context["phraseOutput"] = {"format": "Detailed", "detailed": {"options": []}}
     phrases = split_stt_list(options.get(CONF_STT_PHRASE_LIST, ""))
@@ -62,9 +67,11 @@ def build_realtime_context(options: dict[str, Any], language: str, profanity_mod
     return context
 
 
-def realtime_url(base_url: str) -> str:
-    """Use the standard recognition path on a regional or resource endpoint."""
+def realtime_url(base_url: str, *, post_refinement: bool = DEFAULT_STT_POST_REFINEMENT) -> str:
+    """Use the SDK's universal v2 route for refinement, or the standard v1 route."""
     url = URL(base_url).with_scheme("wss")
+    if post_refinement:
+        return str(url.with_path("/stt/speech/universal/v2"))
     prefix = "/stt" if (url.host or "").endswith(".cognitiveservices.azure.com") else ""
     return str(url.with_path(f"{prefix}/speech/recognition/conversation/cognitiveservices/v1"))
 
